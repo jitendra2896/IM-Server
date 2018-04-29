@@ -4,8 +4,9 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
 
-class GUIClient extends Client implements ActionListener{
+class GUIClient extends Client{
 	LogIn login;
+	SignUp signup;
 	private String ip;
 	int port;
 	public GUIClient(String ip,int port)throws Exception{
@@ -26,21 +27,38 @@ class GUIClient extends Client implements ActionListener{
 
 	public void operate(){
 		login = new LogIn();
-		login.addActionListener(this);
+		login.addActionListener(new LogInActionListener());
 	}
 
-	public void actionPerformed(ActionEvent ae){
-		login.test.setText("You pressed a button");
-		String command = ae.getActionCommand();
-		if(command.equals("Log In")){
-			String username = login.getUsernameText();
-			String password = login.getPasswordText();
-			if(logIn(username,password))
-				login.test.setText("Login Successfull");
-			else
-				login.test.setText("Login failed");
+	class LogInActionListener implements ActionListener{
+		public void actionPerformed(ActionEvent ae){
+			String command = ae.getActionCommand();
+			if(command.equals("Log In")){
+				String username = login.getUsernameText();
+				String password = login.getPasswordText();
+				if(logIn(username,password))
+					login.test.setText("Login Successfull");
+				else
+					login.test.setText("Login failed");
+			}
+			else{
+				signup = new SignUp();
+				signup.addActionListener(new SignUpActionListener());
+			}
 		}
-		else
-			login.test.setText("You pressed SignUp button");
+	}
+
+	class SignUpActionListener implements ActionListener{
+		public void actionPerformed(ActionEvent ae){
+			String command = ae.getActionCommand();
+			if(command.equals("Create Account")){
+				String username = signup.getUsernameText();
+				String password = signup.getPasswordText();
+				if(signUp(username,password))
+					signup.test.setText("Account Created successfully");
+				else
+					signup.test.setText("Username already taken");
+			}
+		}
 	}
 }

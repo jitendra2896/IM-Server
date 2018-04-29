@@ -28,24 +28,26 @@ public abstract class Client {
 		try{
 			sendMessage(Protocols.LOG_IN_REQUEST+":"+userName+":"+password);
 			message = recieveMessage();
-			if(message == Protocols.USER_SUCCESSFULLY_LOGGED_IN){
+			System.out.println(message);
+			if(message.equals(Protocols.USER_SUCCESSFULLY_LOGGED_IN)){
 				sessionStarted = true;
+				System.out.println("User logged in successfully");
 				return sessionStarted;
 			}
 		}catch(IOException e){
 			e.printStackTrace();
 			sessionStarted = false;
 		}
-		return false;
+		return sessionStarted;
 	}
 
-	protected boolean signup(String username,String password){
+	protected boolean signUp(String username,String password){
 		try{
 			sendMessage(Protocols.SIGN_UP_REQUEST+":"+username+":"+password);
 			String response = recieveMessage();
-			if(response == Protocols.USER_ALREADY_EXISTS)
+			if(response.equals(Protocols.USER_ALREADY_EXISTS))
 				return false;
-			else if(response == Protocols.SIGN_UP_SUCCESSFUL)
+			else if(response.equals(Protocols.SIGN_UP_SUCCESSFUL))
 				return true;
 			return false;
 		}catch(IOException e){
@@ -62,7 +64,9 @@ public abstract class Client {
 	}
 
 	protected String recieveMessage()throws IOException{
-			return din.readUTF();
+			String s = din.readUTF();
+			System.out.println("Message from server: "+s);
+			return s;
 	}
 
 	protected final DataInputStream getInputStream(){
