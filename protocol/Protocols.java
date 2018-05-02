@@ -4,6 +4,7 @@ public class Protocols{
 	public static final String LOG_IN_REQUEST = "LOG_IN_REQUEST";
 	public static final String SIGN_UP_REQUEST = "SIGN_UP_REQUEST";
 	public static final String GET_NEW_MESSAGES = "GET_NEW_MESSAGES";
+	public static final String GET_ALL_USERNAMES = "GET_ALL_USERNAMES";
 
 	//Server Responses
 	public static final String EVERYTHING_NOT_OKAY = "EVERYTHING_NOT_OKAY";

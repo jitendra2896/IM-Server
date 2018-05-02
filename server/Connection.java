@@ -85,7 +85,7 @@ class Connection implements Runnable{
 		}
 
 		else if(data[0].equals(Protocols.GET_NEW_MESSAGES) && sessionStarted){
-			File file = new File(userName+".txt");
+			File file = new File("server/"+userName+".txt");
 			boolean empty = !file.exists() || file.length() == 0;
 			if(!empty){
 				sendMessage();
@@ -94,11 +94,17 @@ class Connection implements Runnable{
 			else
 				sendData(Protocols.NO_NEW_MESSAGES);
 		}
+		
+		else if(data[0].equals(Protocols.GET_ALL_USERNAMES) && sessionStarted){
+			sendData(Authentication.getUsernameStrings());
+		}
 
 		else{ //new message
 			parseData(msgin);
 			if(sessionStarted && Authentication.isUser(data[0])){
 				Saver.saveToFile(data[0],userName+":"+data[1]);
+				System.out.println("Message is being saved!");
+				sendData(Protocols.EVERYTHING_OKAY);
 			}	
 			else
 				sendData(Protocols.USER_DOESNT_EXIST);

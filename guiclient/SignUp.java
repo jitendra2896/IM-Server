@@ -30,7 +30,6 @@ class SignUp extends JFrame{
 		add(buttonLogIn);
 		add(buttonCreateAccount);
 		add(test);
-		setVisible(true);
 	}
 
 	public void addActionListener(ActionListener ae){
@@ -44,5 +43,9 @@ class SignUp extends JFrame{
 
 	public String getPasswordText(){
 		return textFieldPassword.getText();
+	}
+	
+	public void showWindow(boolean visibility){
+		setVisible(visibility);
 	}
 }

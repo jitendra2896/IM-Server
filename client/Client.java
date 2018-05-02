@@ -57,13 +57,13 @@ public abstract class Client {
 		return false;
 	}
 
-	protected boolean sendMessage(String message)throws IOException{
+	protected synchronized boolean sendMessage(String message)throws IOException{
 			dout.writeUTF(message);
 			dout.flush();
 			return true;
 	}
 
-	protected String recieveMessage()throws IOException{
+	protected synchronized String recieveMessage()throws IOException{
 			String s = din.readUTF();
 			System.out.println("Message from server: "+s);
 			return s;

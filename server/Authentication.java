@@ -18,7 +18,7 @@ class Authentication{
 		}
 	}
 
-	//Method to regiester new user
+	//Method to register new user
 	public static boolean registerUser(String id,String password){
 		pair.clear();
 		File file = new File(fileName);
@@ -78,7 +78,7 @@ class Authentication{
 	}
 
 
-	public static ArrayList<String> getUserDetails(){
+	public static ArrayList<String> getUserNames(){
 		ArrayList<String> userNames = new ArrayList<>();
 		pair.clear();
 		readData(pair);
@@ -87,10 +87,23 @@ class Authentication{
 		}
 		return userNames;
 	}
-
+	
+	//return all registered usernames as a string seperated by :
+	public static String getUsernameStrings(){
+		ArrayList<String> usernames = getUserNames();
+		StringBuilder build = new StringBuilder();
+		for(int i = 0;i<usernames.size();i++){
+			if(i == usernames.size()-1)
+				build.append(usernames.get(i));
+			else
+				build.append(usernames.get(i)+":");
+		}
+		return build.toString();
+	}
+	
 	//checks if a username is a valid registered username
 	public static boolean isUser(String name){
-		ArrayList<String> userNames = getUserDetails();
+		ArrayList<String> userNames = getUserNames();
 		return userNames.contains(name);
 	}
 
