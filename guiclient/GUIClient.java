@@ -188,9 +188,15 @@ class GUIClient extends Client{
 					SwingUtilities.invokeAndWait(new Runnable(){
 
 						public void run() {
-							for(int i = 1;i<data.length;i=i+2){
-								mWindow.appendTextArea("<"+data[i]+"> "+data[i+1]+"\n");
+							StringBuilder build = new StringBuilder();
+							for(int i = 1;i<data.length;i++){
+								if(i %2 != 0)
+									build.append("<"+data[i]+"> ");
+								else
+									build.append(data[i]+"\n");
 							}
+							System.out.println("Builded Message: "+build.toString());
+							mWindow.appendTextArea(build.toString());
 						}
 					});
 				} catch (InvocationTargetException e) {

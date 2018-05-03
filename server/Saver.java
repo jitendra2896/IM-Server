@@ -20,7 +20,7 @@ class Saver{
 		try(BufferedReader br = new BufferedReader(new FileReader(PACKAGE_NAME+"/"+userName+".txt"))){
 			String line = null;
 			while((line = br.readLine()) != null){
-					builder.append(line+"\n");
+					builder.append(line+":");
 			}
 		}
 		return builder.toString();

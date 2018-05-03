@@ -14,7 +14,7 @@ class Connection implements Runnable{
 	private boolean sessionStarted = false;
 	private String userName;
 	private String msgin;
-	
+	private boolean isConnected;
 	Authentication auth;
 	Saver save;
 	
@@ -24,14 +24,14 @@ class Connection implements Runnable{
 		dout = new DataOutputStream(sock.getOutputStream());
 		msgin = "";
 		userName = "";
-		
+		isConnected = true;
 		this.auth = auth;
 		this.save = save;
 	}
 
 	public void run(){
 		try{
-			while(!msgin.equals("exit")){
+			while(isConnected){
 				msgin = readData();
 				System.out.println(msgin);
 				parseData(msgin);
@@ -39,6 +39,7 @@ class Connection implements Runnable{
 				System.out.println("Message Received: "+msgin);
 			}
 		}catch(Exception e){
+			isConnected = false;
 			e.printStackTrace();
 		}
 	}
@@ -56,13 +57,9 @@ class Connection implements Runnable{
 	}
 
 	//Send new message to the user
-	public void sendMessage(){
-		try{
-			String msg = save.getMessages(userName);
-			sendData(userName+":"+msg);
-		}catch(Exception e){
-			e.printStackTrace();
-		}
+	public void sendMessage()throws Exception{
+		String msg = save.getMessages(userName);
+		sendData(userName+":"+msg);
 	}
 
 	private void parseData(String s){
@@ -116,7 +113,12 @@ class Connection implements Runnable{
 			File file = new File("server/"+userName+".txt");
 			boolean empty = !file.exists() || file.length() == 0;
 			if(!empty){
-				sendMessage();
+				try {
+					sendMessage();
+				} catch (Exception e) {
+					isConnected = false;
+					e.printStackTrace();
+				}
 				file.delete();
 			}
 		}
@@ -126,7 +128,7 @@ class Connection implements Runnable{
 
 		@Override
 		public void run() {
-			while(true){
+			while(isConnected){
 				newMessages();
 			}
 		}
