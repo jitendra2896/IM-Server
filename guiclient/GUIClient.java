@@ -4,10 +4,9 @@ import protocol.Protocols;
 
 import javax.swing.*;
 
-import com.sun.java.swing.plaf.windows.resources.windows;
-
 import java.awt.event.*;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.awt.*;
 
 class GUIClient extends Client{
@@ -17,7 +16,7 @@ class GUIClient extends Client{
 	
 	private String ip;
 	int port;
-	String usernames = "";
+	String userNames = "";
 	
 	public GUIClient(String ip,int port)throws Exception{
 			super(ip,port);
@@ -28,6 +27,7 @@ class GUIClient extends Client{
 			public void run(){
 				try{
 					new GUIClient("192.168.225.160",4000).operate();
+					
 				}catch(Exception e){
 					e.printStackTrace();
 				}
@@ -42,6 +42,9 @@ class GUIClient extends Client{
 		mWindow = new MessageWindow();
 		mWindow.addActionListener(new SendActionListener());
 		login.addActionListener(new LogInActionListener());
+		Thread t = new Thread(new ReaderThread());
+		t.start();
+		System.out.println("Hey man");
 	}
 
 	class LogInActionListener implements ActionListener{
@@ -50,16 +53,21 @@ class GUIClient extends Client{
 			if(command.equals("Log In")){
 				String username = login.getUsernameText();
 				String password = login.getPasswordText();
-				if(logIn(username,password)){
-					login.dispose();
-					mWindow.showWindow(true);
-					
-					//Create a new thread that checks for new messages 
-					new Thread(new MessageRecieverThread()).start();
-				}
-					
-				else
-					login.test.setText("Login failed");
+				System.out.println("Hopfully");
+				new SwingWorker<Void,Void>(){
+					@Override
+					public Void doInBackground(){
+						try {
+							System.out.println("Inside this thread");
+							sendMessage(Protocols.LOG_IN_REQUEST+":"+username+":"+password);
+							userNames = username;
+							System.out.println("Method finished");
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						return null;
+					}
+				}.execute();
 			}
 			else{
 				signup = new SignUp();
@@ -75,10 +83,16 @@ class GUIClient extends Client{
 			if(command.equals("Create Account")){
 				String username = signup.getUsernameText();
 				String password = signup.getPasswordText();
-				if(signUp(username,password))
-					signup.test.setText("Account Created successfully");
-				else
-					signup.test.setText("Username already taken");
+				new SwingWorker<Void,Void>(){
+					public Void doInBackground(){
+						try {
+							sendMessage(Protocols.SIGN_UP_REQUEST+":"+username+":"+password);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						return null;
+					}
+				}.execute();
 			}
 		}
 	}
@@ -90,42 +104,105 @@ class GUIClient extends Client{
 			if(msg != null){
 				String username = mWindow.getUsername();
 				System.out.println("How come "+username);
-				try {
-					sendMessage(username+":"+msg);
-					System.out.println(recieveMessage());
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+				new SwingWorker<Void,Void>(){
+					public Void doInBackground(){
+						try {
+							sendMessage(username+":"+msg);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						return null;
+					}
+				}.execute();
 			}
 		}
 	}
 	
-	class MessageRecieverThread implements Runnable{
+	class ReaderThread implements Runnable{
 		public void run(){
-			while(mWindow.isWindowVisible()){
+			while(true){
 				try {
-					sendMessage(Protocols.GET_NEW_MESSAGES);
+					System.out.println("Working");
 					String msg = recieveMessage();
-					
-					if(!msg.equals(Protocols.NO_NEW_MESSAGES))
-						mWindow.appendTextArea(msg);
-					
-					sendMessage(Protocols.GET_ALL_USERNAMES);
-					usernames = recieveMessage();
-					SwingUtilities.invokeAndWait(new UpdateUsernameList());
-					Thread.sleep(3000);
-				} catch (Exception e) {
+					takeAction(msg);
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 		}
-	}
-	
-	class UpdateUsernameList implements Runnable{
 		
-		public void run() {
-			mWindow.setListData(usernames.split(":"));
+		private void takeAction(String msg){
+			String[] data = parseMessage(msg);
+			if(data[0].equals(Protocols.USER_SUCCESSFULLY_LOGGED_IN)){
+				try {
+					SwingUtilities.invokeAndWait(new Runnable(){
+
+						public void run() {
+							login.dispose();
+							mWindow.showWindow(true);
+							mWindow.setTitle(userNames);
+						}
+						
+					});
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			else if(data[0].equals(Protocols.LOG_IN_UNSUCCESSFUL)){
+				
+			}
+			else if(data[0].equals(Protocols.USERNAME_STRINGS)){
+				String username[] = new String[data.length-1];
+				for(int i = 0;i<username.length;i++){
+					username[i] = data[i+1];
+				}
+				try {
+					SwingUtilities.invokeAndWait(new Runnable(){
+
+						public void run() {
+							mWindow.setListData(username);
+						}
+					});
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			else if(data[0].equals(Protocols.SIGN_UP_SUCCESSFUL)){
+				
+			}
+			else if(data[0].equals(Protocols.USER_ALREADY_EXISTS)){
+				
+			}
+			else if(data[0].equals(userNames)){
+				
+				System.out.println("Actual Message");
+				for(int i = 0;i<data.length;i++){
+					System.out.println(data[i]);
+				}
+				
+				try {
+					SwingUtilities.invokeAndWait(new Runnable(){
+
+						public void run() {
+							for(int i = 1;i<data.length;i=i+2){
+								mWindow.appendTextArea("<"+data[i]+"> "+data[i+1]+"\n");
+							}
+						}
+					});
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 		
+		private String[] parseMessage(String msg){
+			return msg.split(":");
+		}
 	}
 }

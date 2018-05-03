@@ -73,7 +73,7 @@ public class MessageWindow extends JFrame{
 		isVisible = visibility;
 	}
 	
-	public void setTitle(String title){
+	public void setMessageWindowTitle(String title){
 		setTitle(title);
 	}
 	

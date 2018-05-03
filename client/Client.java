@@ -22,7 +22,7 @@ public abstract class Client {
 		dout = new DataOutputStream(sock.getOutputStream());
 	}
 
-	protected final boolean logIn(String userName,String password){
+	/*protected final boolean logIn(String userName,String password){
 		String message = "";
 
 		try{
@@ -40,8 +40,8 @@ public abstract class Client {
 		}
 		return sessionStarted;
 	}
-
-	protected boolean signUp(String username,String password){
+	*/
+	/*protected boolean signUp(String username,String password){
 		try{
 			sendMessage(Protocols.SIGN_UP_REQUEST+":"+username+":"+password);
 			String response = recieveMessage();
@@ -55,18 +55,23 @@ public abstract class Client {
 			sessionStarted = false;
 		}
 		return false;
-	}
+	}*/
 
-	protected synchronized boolean sendMessage(String message)throws IOException{
+	protected boolean sendMessage(String message)throws IOException{
+		synchronized(dout){
+			System.out.println("Inside send Message");
 			dout.writeUTF(message);
 			dout.flush();
 			return true;
+		}
 	}
 
-	protected synchronized String recieveMessage()throws IOException{
+	protected String recieveMessage()throws IOException{
+		synchronized(din){
 			String s = din.readUTF();
 			System.out.println("Message from server: "+s);
 			return s;
+		}
 	}
 
 	protected final DataInputStream getInputStream(){

@@ -14,19 +14,26 @@ class Connection implements Runnable{
 	private boolean sessionStarted = false;
 	private String userName;
 	private String msgin;
-
-	Connection(Socket sock)throws Exception{
+	
+	Authentication auth;
+	Saver save;
+	
+	Connection(Socket sock,Authentication auth,Saver save)throws Exception{
 		this.sock = sock;
 		din = new DataInputStream(sock.getInputStream());
 		dout = new DataOutputStream(sock.getOutputStream());
 		msgin = "";
 		userName = "";
+		
+		this.auth = auth;
+		this.save = save;
 	}
 
 	public void run(){
 		try{
 			while(!msgin.equals("exit")){
 				msgin = readData();
+				System.out.println(msgin);
 				parseData(msgin);
 				takeAction();
 				System.out.println("Message Received: "+msgin);
@@ -51,8 +58,8 @@ class Connection implements Runnable{
 	//Send new message to the user
 	public void sendMessage(){
 		try{
-			String msg = Saver.getMessages(userName);
-			sendData(msg);
+			String msg = save.getMessages(userName);
+			sendData(userName+":"+msg);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -67,47 +74,62 @@ class Connection implements Runnable{
 	private void takeAction() throws Exception{
 
 		if(data[0].equals(Protocols.LOG_IN_REQUEST)){
-			if(Authentication.authenticate(data[1],data[2])){
+			if(auth.authenticate(data[1],data[2])){
 				sessionStarted = true;
 				userName = data[1];
 				sendData(Protocols.USER_SUCCESSFULLY_LOGGED_IN);
+				sendUsernames();
+				new Thread(new ReaderThread()).start();
 			}
 			else
 				sendData(Protocols.LOG_IN_UNSUCCESSFUL);
 		}
 
 		else if(data[0].equals(Protocols.SIGN_UP_REQUEST)){
-			if(Authentication.registerUser(data[1],data[2])){
+			if(auth.registerUser(data[1],data[2])){
 				sendData(Protocols.SIGN_UP_SUCCESSFUL);
+				sendUsernames();
 			}
 			else
 				sendData(Protocols.USER_ALREADY_EXISTS);
 		}
 
-		else if(data[0].equals(Protocols.GET_NEW_MESSAGES) && sessionStarted){
+		else{ //new message
+			parseData(msgin);
+			if(sessionStarted && auth.isUser(data[0])){
+				save.saveToFile(data[0],userName+":"+data[1]);
+				System.out.println("Message is being saved!");
+			}
+		}
+	}
+	
+	private void sendUsernames() throws Exception{
+		sendData(Protocols.USERNAME_STRINGS+":"+auth.getUsernameStrings());
+	}
+	
+	public String getUsername(){
+		return userName;
+	}
+	
+	public void newMessages(){
+		if(sessionStarted){
 			File file = new File("server/"+userName+".txt");
 			boolean empty = !file.exists() || file.length() == 0;
 			if(!empty){
 				sendMessage();
 				file.delete();
 			}
-			else
-				sendData(Protocols.NO_NEW_MESSAGES);
+		}
+	}
+	
+	public class ReaderThread implements Runnable{
+
+		@Override
+		public void run() {
+			while(true){
+				newMessages();
+			}
 		}
 		
-		else if(data[0].equals(Protocols.GET_ALL_USERNAMES) && sessionStarted){
-			sendData(Authentication.getUsernameStrings());
-		}
-
-		else{ //new message
-			parseData(msgin);
-			if(sessionStarted && Authentication.isUser(data[0])){
-				Saver.saveToFile(data[0],userName+":"+data[1]);
-				System.out.println("Message is being saved!");
-				sendData(Protocols.EVERYTHING_OKAY);
-			}	
-			else
-				sendData(Protocols.USER_DOESNT_EXIST);
-		}
 	}
 }

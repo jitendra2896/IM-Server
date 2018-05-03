@@ -16,4 +16,5 @@ public class Protocols{
 	public static final String LOG_IN_UNSUCCESSFUL = "LOG_IN_UNSUCCESSFUL";
 	public static final String USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS";
 	public static final String SIGN_UP_SUCCESSFUL = "LOG_IN_UNSUCCESSFULL";
+	public static final String USERNAME_STRINGS = "USERNAME_STRINGS";
 }
