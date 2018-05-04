@@ -41,33 +41,52 @@ class GUIClient extends Client{
 		signup = new SignUp();
 		mWindow = new MessageWindow();
 		mWindow.addActionListener(new SendActionListener());
-		login.addActionListener(new LogInActionListener());
+		LogInActionListener fl = new LogInActionListener();
+		login.addActionListener(fl);
+		login.addFocusListener(fl);
 		Thread t = new Thread(new ReaderThread());
 		t.start();
 		System.out.println("Hey man");
 	}
 
-	class LogInActionListener implements ActionListener{
+	class LogInActionListener implements ActionListener,FocusListener{
 		public void actionPerformed(ActionEvent ae){
 			String command = ae.getActionCommand();
+			execute(command);
+		}
+		
+		private void execute(String command){
 			if(command.equals("Log In")){
 				String username = login.getUsernameText();
 				String password = login.getPasswordText();
-				System.out.println("Hopfully");
-				new SwingWorker<Void,Void>(){
-					@Override
-					public Void doInBackground(){
-						try {
-							System.out.println("Inside this thread");
-							sendMessage(Protocols.LOG_IN_REQUEST+":"+username+":"+password);
-							userNames = username;
-							System.out.println("Method finished");
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-						return null;
+				if(username.length() <=0 || password.length() <= 0){
+					login.setInfoLabelColor(Color.RED);
+					if(username.length() <=0 && password.length() > 0){
+						login.setInfoLabel("Username required");
 					}
-				}.execute();
+					else if(password.length() <= 0 && username.length() > 0){
+						login.setInfoLabel("Password required");
+					}
+					else{
+						login.setInfoLabel("Username and Password required");
+					}
+				}
+				else{
+					new SwingWorker<Void,Void>(){
+						@Override
+						public Void doInBackground(){
+							try {
+								System.out.println("Inside this thread");
+								sendMessage(Protocols.LOG_IN_REQUEST+":"+username+":"+password);
+								userNames = username;
+								System.out.println("Method finished");
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							return null;
+						}
+					}.execute();
+				}
 			}
 			else{
 				signup = new SignUp();
@@ -75,6 +94,24 @@ class GUIClient extends Client{
 				signup.showWindow(true);
 			}
 		}
+
+		@Override
+		public void focusGained(FocusEvent fe) {
+			Component c = fe.getComponent();
+			if(c == login.getUsernameTextField()){
+				login.setUsernameTextFieldForegroundColor(Color.BLACK);
+				login.setUsernameTextFieldText("");
+			}
+			else{
+				login.setPasswordTextFieldForegroundColor(Color.BLACK);
+				login.setPasswordTextFieldText("");
+			}
+			login.setInfoLabel("");
+			
+		}
+		
+		@Override
+		public void focusLost(FocusEvent arg0) {}
 	}
 
 	class SignUpActionListener implements ActionListener{
@@ -151,7 +188,22 @@ class GUIClient extends Client{
 				}
 			}
 			else if(data[0].equals(Protocols.LOG_IN_UNSUCCESSFUL)){
-				
+				try {
+					SwingUtilities.invokeAndWait(new Runnable(){
+
+						public void run() {
+							login.setInfoLabel("username or password is incorrect. Try Again!");
+							login.setUsernameTextFieldForegroundColor(Color.RED);
+							login.setPasswordTextFieldForegroundColor(Color.RED);
+							login.setInfoLabelColor(Color.RED);
+						}
+						
+					});
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 			else if(data[0].equals(Protocols.USERNAME_STRINGS)){
 				String username[] = new String[data.length-1];
