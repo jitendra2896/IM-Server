@@ -22,7 +22,7 @@ public class MessageWindow extends JFrame{
 		super("Message Window");
 		getContentPane().setLayout(null);
 		setBounds(100, 100, 1024, 768);
-		
+		getContentPane().setBackground(new Color(135, 206, 235));
 		sendButton = new JButton("SEND");
 		sendButton.setFont(new Font("Verdana", Font.BOLD, 20));
 		sendButton.setBackground(new Color(0, 206, 209));

@@ -90,7 +90,10 @@ class GUIClient extends Client{
 			}
 			else{
 				signup = new SignUp();
-				signup.addActionListener(new SignUpActionListener());
+				login.setVisible(false);
+				SignUpActionListener fl = new SignUpActionListener();
+				signup.addActionListener(fl);
+				signup.addFocusListener(fl);
 				signup.showWindow(true);
 			}
 		}
@@ -99,39 +102,68 @@ class GUIClient extends Client{
 		public void focusGained(FocusEvent fe) {
 			Component c = fe.getComponent();
 			if(c == login.getUsernameTextField()){
-				login.setUsernameTextFieldForegroundColor(Color.BLACK);
 				login.setUsernameTextFieldText("");
 			}
 			else{
-				login.setPasswordTextFieldForegroundColor(Color.BLACK);
 				login.setPasswordTextFieldText("");
 			}
+			login.setUsernameTextFieldForegroundColor(Color.BLACK);
 			login.setInfoLabel("");
-			
+			login.setPasswordTextFieldForegroundColor(Color.BLACK);
 		}
 		
 		@Override
 		public void focusLost(FocusEvent arg0) {}
 	}
 
-	class SignUpActionListener implements ActionListener{
+	class SignUpActionListener implements ActionListener,FocusListener{
 		public void actionPerformed(ActionEvent ae){
 			String command = ae.getActionCommand();
 			if(command.equals("Create Account")){
 				String username = signup.getUsernameText();
 				String password = signup.getPasswordText();
-				new SwingWorker<Void,Void>(){
-					public Void doInBackground(){
-						try {
-							sendMessage(Protocols.SIGN_UP_REQUEST+":"+username+":"+password);
-						} catch (IOException e) {
-							e.printStackTrace();
+				if(signup.validatePassword()){
+					new SwingWorker<Void,Void>(){
+						public Void doInBackground(){
+							try {
+								sendMessage(Protocols.SIGN_UP_REQUEST+":"+username+":"+password);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							return null;
 						}
-						return null;
+					}.execute();
+				}
+				else{
+					int pass1length = signup.getPasswordText().length();
+					int pass2length = signup.getRetypePasswordText().length();
+					if(signup.getUsernameText().length() <= 0){
+						signup.setInfoLabel("Username Required");
 					}
-				}.execute();
+					else if(pass1length <= 0){
+						signup.setInfoLabel("Password required!");
+					}
+					else if(pass1length >= 0 && pass2length <= 0){
+						signup.setInfoLabel("Re-type password field required");
+					}
+					else{
+						signup.setInfoLabel("Passwords do not match");
+					}
+				}
+			}
+			else{
+				signup.dispose();
+				login.setVisible(true);
 			}
 		}
+
+		@Override
+		public void focusGained(FocusEvent arg0) {
+			signup.setInfoLabel("");
+		}
+
+		@Override
+		public void focusLost(FocusEvent arg0) {}
 	}
 	
 	class SendActionListener implements ActionListener{
@@ -224,10 +256,31 @@ class GUIClient extends Client{
 				}
 			}
 			else if(data[0].equals(Protocols.SIGN_UP_SUCCESSFUL)){
-				
+				try {
+					SwingUtilities.invokeAndWait(new Runnable(){
+						public void run(){
+							signup.setInfoLabel("Account Created successfully!");
+							signup.setInfoLabelColor(Color.WHITE);
+						}
+					});
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 			else if(data[0].equals(Protocols.USER_ALREADY_EXISTS)){
-				
+				try {
+					SwingUtilities.invokeAndWait(new Runnable(){
+						public void run(){
+							signup.setInfoLabel("Username already taken. Try a different one!");
+						}
+					});
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 			else if(data[0].equals(userNames)){
 				
