@@ -3,6 +3,8 @@ package server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
+import global.DataManager;
 import protocol.*;
 
 class Connection implements Runnable{
@@ -12,21 +14,19 @@ class Connection implements Runnable{
 	private DataOutputStream dout;
 	private String data[];
 	private boolean sessionStarted = false;
-	private String userName;
+	private String username;
 	private String msgin;
 	private boolean isConnected;
-	Authentication auth;
-	Saver save;
+	DataManager dm;
 	
-	Connection(Socket sock,Authentication auth,Saver save)throws Exception{
+	Connection(Socket sock,DataManager dm)throws Exception{
 		this.sock = sock;
 		din = new DataInputStream(sock.getInputStream());
 		dout = new DataOutputStream(sock.getOutputStream());
 		msgin = "";
-		userName = "";
+		username = "";
 		isConnected = true;
-		this.auth = auth;
-		this.save = save;
+		this.dm = dm;
 	}
 
 	public void run(){
@@ -58,8 +58,8 @@ class Connection implements Runnable{
 
 	//Send new message to the user
 	public void sendMessage()throws Exception{
-		String msg = save.getMessages(userName);
-		sendData(userName+":"+msg);
+		String msg = dm.getNewMessage(username);
+		sendData(username+":"+msg);
 	}
 
 	private void parseData(String s){
@@ -71,9 +71,9 @@ class Connection implements Runnable{
 	private void takeAction() throws Exception{
 
 		if(data[0].equals(Protocols.LOG_IN_REQUEST)){
-			if(auth.authenticate(data[1],data[2])){
+			if(dm.authenticate(data[1],data[2])){
 				sessionStarted = true;
-				userName = data[1];
+				username = data[1];
 				sendData(Protocols.USER_SUCCESSFULLY_LOGGED_IN);
 				sendUsernames();
 				new Thread(new ReaderThread()).start();
@@ -83,7 +83,7 @@ class Connection implements Runnable{
 		}
 
 		else if(data[0].equals(Protocols.SIGN_UP_REQUEST)){
-			if(auth.registerUser(data[1],data[2])){
+			if(dm.registerUser(data[1],data[2])){
 				sendData(Protocols.SIGN_UP_SUCCESSFUL);
 				sendUsernames();
 			}
@@ -92,25 +92,24 @@ class Connection implements Runnable{
 		}
 
 		else{ //new message
-			parseData(msgin);
-			if(sessionStarted && auth.isUser(data[0])){
-				save.saveToFile(data[0],userName+":"+data[1]);
+			if(sessionStarted && dm.isUser(data[0])){
+				dm.storeMessage(data[0],username+":"+data[1]);
 				System.out.println("Message is being saved!");
 			}
 		}
 	}
 	
 	private void sendUsernames() throws Exception{
-		sendData(Protocols.USERNAME_STRINGS+":"+auth.getUsernameStrings());
+		sendData(Protocols.USERNAME_STRINGS+":"+dm.getAllUsernames());
 	}
 	
 	public String getUsername(){
-		return userName;
+		return username;
 	}
 	
 	public void newMessages(){
 		if(sessionStarted){
-			File file = new File("server/"+userName+".txt");
+			File file = new File("server/"+username+".txt");
 			boolean empty = !file.exists() || file.length() == 0;
 			if(!empty){
 				try {

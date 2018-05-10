@@ -1,17 +1,18 @@
 package server;
 
 import java.net.*;
+
+import filestorage.FileManager;
 class Server{
 	
 	public static void main(String args[]){
 		
-		Saver save = new Saver();
-		Authentication auth = new Authentication();
+		FileManager manager = new FileManager();
 		try{
 			ServerSocket sock = new ServerSocket(4000);
 			while(true){
 				Socket s = sock.accept();
-				Connection c = new Connection(s,auth,save);
+				Connection c = new Connection(s,manager);
 				Thread t = new Thread(c);
 				t.start();
 			}
