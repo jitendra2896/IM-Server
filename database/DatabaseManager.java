@@ -11,7 +11,6 @@ import global.DataManager;
 public class DatabaseManager implements DataManager{
 	
 	private final int DATABASE_VERSION = 1;
-	DatabaseManager dm = new DatabaseManager();
 	private final String DATABASE_NAME = "chat_database";
 	private final String DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
 	private final String USERNAME = "root";
@@ -20,20 +19,17 @@ public class DatabaseManager implements DataManager{
 	private Connection conn;
 	private Statement stat;
 	
-	private DatabaseManager() {
+	public DatabaseManager() {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
-			conn = DriverManager.getConnection("jdbc:mysql://localhost/test?&useSSL=false","root","");
+			conn = DriverManager.getConnection(CONNECTION_URL,USERNAME,PASSWORD);
 			stat = conn.createStatement();
+			System.out.println("Connected to database successfully");
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	public DatabaseManager getInstance() {
-		return dm;
 	}
 
 	@Override
@@ -76,4 +72,7 @@ public class DatabaseManager implements DataManager{
 		
 	}
 	
+	public static void main(String args[]) {
+		new DatabaseManager();
+	}
 }

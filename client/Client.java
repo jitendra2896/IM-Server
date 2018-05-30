@@ -4,7 +4,7 @@ import protocol.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-public abstract class Client {
+public class Client {
 
 	protected static DataInputStream din;
 	protected static DataOutputStream dout;
