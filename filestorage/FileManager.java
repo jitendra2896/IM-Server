@@ -10,13 +10,20 @@ import java.util.ArrayList;
 
 import global.DataManager;
 
+/**
+ * This class manages and access data present in normal text files
+ * @author DELL
+ *
+ */
 public class FileManager implements DataManager{
 	
 	private static final String AUTH_FILE_NAME = "server/auth.txt";
 	private static final String PATH_TO_MESSAGE_FILE = "server/";
-	private final ArrayList<Pair> pair = new ArrayList<>();
 	
-	//Returns all registered username in a string separated by a colon(:)
+	/**
+	 * Returns all the registered users as string object seperated by :
+	 * @return String of usernames seprated by :
+	 */
 	@Override
 	public String getAllUsernames() {
 		ArrayList<String> usernames = getUserNames();
@@ -29,31 +36,52 @@ public class FileManager implements DataManager{
 		}
 		return build.toString();
 	}
-
+	
+	/**
+	 * Method to return friends of a user
+	 * @param username name of user whose friends are required
+	 * @return friends of the username
+	 */
 	@Override
 	public String getFriendList(String username) {
 		return null;
 	}
-
+	
+	/**
+	 * Method to check if username and password are registered
+	 * @param username username to check
+	 * @param password password to check
+	 * @return true if username and password exist in auth.txt false otherwise
+	 */
 	@Override
 	public boolean authenticate(String username, String password) {
-		pair.clear();
-		readData();
+		ArrayList<Pair> pair = new ArrayList<>();
+		readData(pair);
 		for(int i = 0;i<pair.size();i++)
 			if(equals(pair.get(i),username,password))
 				return true;
 		return false;
 	}
-
+	
+	/**
+	 * It checks weather a user is registered or not
+	 * @param username username of user
+	 * @return true if username is in auth.txt false otherwise
+	 */
 	@Override
 	public boolean isUser(String username) {
 		ArrayList<String> userNames = getUserNames();
 		return userNames.contains(username);
 	}
-
+	
+	/**
+	 * Use to register new user
+	 * @param username username of the new user
+	 * @param password password of the new user
+	 * @return true if registration was successful false if the user already exist
+	 */
 	@Override
-	public boolean registerUser(String username, String password) {
-		pair.clear();
+	public synchronized boolean registerUser(String username, String password) {
 		File file = new File(AUTH_FILE_NAME);
 
 		//check if the username already exists in auth.txt
@@ -73,34 +101,54 @@ public class FileManager implements DataManager{
 		}
 		return false;
 	}
-
+	
+	/**
+	 * Check if new messages are available for the given user
+	 * @param username username of the user for whom new messages are to be checked
+	 * @return true if new messages are available false otherwise.
+	 */
 	@Override
-	public boolean isNewMessagAvailable(String username) {
+	public boolean isNewMessageAvailable(String username) {
 		File file = new File(PATH_TO_MESSAGE_FILE+username+".txt");
 		return (file.exists() || file.length() != 0);
 	}
-
+	
+	/**
+	 * get new message for a user
+	 * @param username username for whom new message are required
+	 * @return message string where each message is seperated by :, null if no new message is available
+	 */
 	@Override
-	public String getNewMessage(String username) throws Exception{
-		StringBuilder builder = new StringBuilder();
-		try(BufferedReader br = new BufferedReader(new FileReader(PATH_TO_MESSAGE_FILE+username+".txt"))){
-			String line = null;
-			while((line = br.readLine()) != null){
-				builder.append(line+":");
+	public synchronized String getNewMessage(String username) throws Exception{
+		if(isNewMessageAvailable(username)) {
+			StringBuilder builder = new StringBuilder();
+			try(BufferedReader br = new BufferedReader(new FileReader(PATH_TO_MESSAGE_FILE+username+".txt"))){
+				String line = null;
+				while((line = br.readLine()) != null){
+					builder.append(line+":");
+				}
 			}
+			return builder.toString();
 		}
-		return builder.toString();
+		return null;
 	}
 	
+	/**
+	 * Method to store messages for a user
+	 * @param username username for whom the message is sent
+	 * @param msg actual message
+	 */
 	@Override
-	public void storeMessage(String username, String msg) throws IOException {
+	public synchronized void storeMessage(String username, String msg) throws IOException {
+		System.out.println("Message is being saved!");
 		try(PrintWriter out = new PrintWriter(new FileWriter(PATH_TO_MESSAGE_FILE+username+".txt",true))){
 			out.println(msg);
 		}
+
 	}
 	
 	//reads the data from auth.txt in pair
-	private synchronized void readData(){
+	private synchronized void readData(ArrayList<Pair> pair){
 		try{
 			try(BufferedReader br = new BufferedReader(new FileReader(AUTH_FILE_NAME))){
 				String line = "";
@@ -115,10 +163,11 @@ public class FileManager implements DataManager{
 		}
 	}
 	
+	//returns all the registered username in string
 	private ArrayList<String> getUserNames(){
 		ArrayList<String> userNames = new ArrayList<>();
-		pair.clear();
-		readData();
+		ArrayList<Pair> pair = new ArrayList<>();
+		readData(pair);
 		for(int i = 0;i<pair.size();i++){
 			userNames.add(pair.get(i).id);
 		}

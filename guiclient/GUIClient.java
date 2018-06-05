@@ -26,7 +26,7 @@ class GUIClient extends Client{
 		SwingUtilities.invokeLater(new Runnable(){
 			public void run(){
 				try{
-					new GUIClient("192.168.225.160",4000).operate();
+					new GUIClient("192.168.225.160",80).operate();
 					
 				}catch(Exception e){
 					e.printStackTrace();

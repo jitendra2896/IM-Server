@@ -33,10 +33,9 @@ class Connection implements Runnable{
 		try{
 			while(isConnected){
 				msgin = readData();
-				System.out.println(msgin);
+				System.out.println("Messsage Received: "+msgin);
 				parseData(msgin);
 				takeAction();
-				System.out.println("Message Received: "+msgin);
 			}
 		}catch(Exception e){
 			isConnected = false;
@@ -46,6 +45,7 @@ class Connection implements Runnable{
 
 	public void sendData(String data)throws Exception{
 		dout.writeUTF(data);
+		System.out.println("SERVER SENDING DATA: "+data);
 		flush();
 	}
 	public String readData()throws Exception{
@@ -69,7 +69,7 @@ class Connection implements Runnable{
 
 	//Take necessary action based on client request
 	private void takeAction() throws Exception{
-
+		System.out.println("data[0]: "+data[0]);
 		if(data[0].equals(Protocols.LOG_IN_REQUEST)){
 			if(dm.authenticate(data[1],data[2])){
 				sessionStarted = true;
@@ -90,11 +90,14 @@ class Connection implements Runnable{
 			else
 				sendData(Protocols.USER_ALREADY_EXISTS);
 		}
+		
+		else if(sessionStarted && data[0].equals(Protocols.GET_ALL_USERNAMES)) {
+			sendUsernames();
+		}
 
 		else{ //new message
 			if(sessionStarted && dm.isUser(data[0])){
 				dm.storeMessage(data[0],username+":"+data[1]);
-				System.out.println("Message is being saved!");
 			}
 		}
 	}
@@ -112,13 +115,15 @@ class Connection implements Runnable{
 			File file = new File("server/"+username+".txt");
 			boolean empty = !file.exists() || file.length() == 0;
 			if(!empty){
+				System.out.println("New messages available");
 				try {
 					sendMessage();
+					file.delete();
+					System.out.println("Message file deleted");
 				} catch (Exception e) {
 					isConnected = false;
 					e.printStackTrace();
 				}
-				file.delete();
 			}
 		}
 	}
