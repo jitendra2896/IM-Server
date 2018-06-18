@@ -10,5 +10,5 @@ public interface DataManager {
 	public boolean registerUser(String username,String password);
 	public boolean isNewMessageAvailable(String username);
 	public String getNewMessage(String username) throws Exception;
-	public void storeMessage(String username,String msg) throws IOException;
+	public void storeMessage(String senderUsername,String RecepientUsername,String msg) throws IOException;
 }

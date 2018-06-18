@@ -139,12 +139,12 @@ public class FileManager implements DataManager{
 	 * @param msg actual message
 	 */
 	@Override
-	public synchronized void storeMessage(String username, String msg) throws IOException {
+	public synchronized void storeMessage(String senderUsername,String recepientUsername, String msg) throws IOException {
 		System.out.println("Message is being saved!");
-		try(PrintWriter out = new PrintWriter(new FileWriter(PATH_TO_MESSAGE_FILE+username+".txt",true))){
-			out.println(msg);
+		String formatedMessage = senderUsername+":"+msg;
+		try(PrintWriter out = new PrintWriter(new FileWriter(PATH_TO_MESSAGE_FILE+recepientUsername+".txt",true))){
+			out.println(formatedMessage);
 		}
-
 	}
 	
 	//reads the data from auth.txt in pair

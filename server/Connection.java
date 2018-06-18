@@ -1,9 +1,6 @@
 package server;
-
 import java.io.*;
 import java.net.*;
-import java.util.*;
-
 import global.DataManager;
 import protocol.*;
 
@@ -17,7 +14,7 @@ class Connection implements Runnable{
 	private String username;
 	private String msgin;
 	private boolean isConnected;
-	DataManager dm;
+	private DataManager dm;
 	
 	Connection(Socket sock,DataManager dm)throws Exception{
 		this.sock = sock;
@@ -31,6 +28,9 @@ class Connection implements Runnable{
 
 	public void run(){
 		try{
+			System.out.println("Thread Started");
+			Server.increaseConnetion();
+			Server.printConnection();
 			while(isConnected){
 				msgin = readData();
 				System.out.println("Messsage Received: "+msgin);
@@ -41,6 +41,9 @@ class Connection implements Runnable{
 			isConnected = false;
 			e.printStackTrace();
 		}
+		Server.decreaseConnection();
+		Server.printConnection();
+		System.out.println("Exiting the thread");
 	}
 
 	public void sendData(String data)throws Exception{
@@ -97,7 +100,7 @@ class Connection implements Runnable{
 
 		else{ //new message
 			if(sessionStarted && dm.isUser(data[0])){
-				dm.storeMessage(data[0],username+":"+data[1]);
+				dm.storeMessage(username,data[0],data[1]);
 			}
 		}
 	}
@@ -110,7 +113,7 @@ class Connection implements Runnable{
 		return username;
 	}
 	
-	public void newMessages(){
+	public synchronized void newMessages(){
 		if(sessionStarted){
 			File file = new File("server/"+username+".txt");
 			boolean empty = !file.exists() || file.length() == 0;
