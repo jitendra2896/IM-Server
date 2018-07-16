@@ -15,14 +15,26 @@ public class Element {
 	private String elementName;
 	private List<Element> childElements;
 	private String text;
-	private static StringBuilder xml = new StringBuilder();
+	private StringBuilder xml;	
+	
+	public Element() {
+		this(null);
+	}
+	
 	public Element(String elementName) {
-		this.elementName = new String(elementName);
+		this.elementName = elementName;
 		attributes = new HashMap<>();
 		childElements = new LinkedList<>();
+		xml = new StringBuilder();
+	}
+	
+	public Element addElementName(String name) {
+		this.elementName = name;
+		return this;
 	}
 	
 	public Element addAttribute(String name,String value) throws XMLException {
+		
 		if(attributes.containsKey(name))
 			throw new XMLException("Duplicate Attribute: "+name);
 		attributes.put(name, value);
@@ -43,28 +55,54 @@ public class Element {
 		return this;
 	}
 	
-	public String toXML() {
-		
-		xml.append("<"+elementName+" ");
+	public Element addAttribute(Map<String,String> attr) {
+		attributes = attr;
+		return this;
+	}
+	
+	public List<Element> getChildElements() {
+		return childElements;
+	}
+	
+	public String getAttributeValue(String attributeName) {
+		return attributes.get(attributeName);
+	}
+	
+	public String getText() {
+		return text;
+	}
+	
+	public String getElementName() {
+		return elementName;
+	}
+	
+	public Map<String,String> getAttributes(){
+		return attributes;
+	}
+	
+	public String toXML(StringBuilder xml) throws XMLException {
+		if(elementName == null)
+			throw new XMLException("Element name not set");
+		xml.append("<"+elementName);
 		Iterator<String> keys = attributes.keySet().iterator();
 		String key;
 		while(keys.hasNext()) {
 			key = keys.next();
 			String value = attributes.get(key);
-			xml.append(key+"="+"\""+value+"\" ");
+			xml.append(" "+key+"="+"\""+value+"\"");
 		}
 		if(text != null) {
 			xml.append(">"+text);
-			xml.append("<"+elementName+"/>");
+			xml.append("</"+elementName+">");
 		}
 		else if(childElements.size() <= 0)
-			xml.append("/>");
+			xml.append(" />");
 		else {
-			xml.append(">\n\t");
+			xml.append(">");
 			for(int i = 0;i<childElements.size();i++) {
-				childElements.get(i).toXML();
+				childElements.get(i).toXML(xml);
 			}
-			xml.append("\n<"+elementName+"/>");
+			xml.append("</"+elementName+">");
 		}
 		return xml.toString();
 	}
@@ -79,9 +117,9 @@ public class Element {
 			child2.addAttribute("to","saurav").addText("Tell me");
 			root.addElement(child);
 			child.addElement(child2);
+			//System.out.println(root.toXML());
 		} catch (XMLException e) {
 			e.printStackTrace();
 		}
-		System.out.println(root.toXML());
 	}
 }
