@@ -216,10 +216,20 @@ public class Parser {
 			new Element("stream").addAttribute("to", "Jitendra").addAttribute("from","me").addElement(child).addElement(child2).toXML(build1);
 			System.out.println("Actual\n"+build1.toString());
 			System.out.println("Parsed");
-			Element root = Parser.parse(build1.toString());
+			Element root = Parser.parse("<iq from=\"alice@wonderland.lit\"\r\n" + 
+					"id=\"rr82a1z7\"\r\n" + 
+					"to=\"alice@wonderland.lit/pda\"\r\n" + 
+					"type=\"result\">\r\n" + 
+					"<query xmlns=\"jabber:iq:roster\">\r\n" + 
+					"<item jid=\"whiterabbit@wonderland.lit\"/>\r\n" + 
+					"<item jid=\"lory@wonderland.lit\"/>\r\n" + 
+					"<item jid=\"mouse@wonderland.lit\"/>\r\n" + 
+					"<item jid=\"sister@realworld.lit\"/>\r\n" + 
+					"</query>\r\n" + 
+					"</iq>");
 			root.toXML(build2);
 			System.out.println(build2.toString());
-			System.out.println(build1.toString().equals(build2.toString()));
+			//System.out.println(build1.toString().equals(build2.toString()));
 			
 		} catch (XMLException e) {
 			e.printStackTrace();
