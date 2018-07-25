@@ -6,9 +6,12 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
+import java.util.List;
 
 import database.ChatDatabaseContract;
 import xdatabase.DatabaseContract;
+import xserver.Roster;
 
 public class DatabaseManager {
 	private final String DATABASE_NAME = "chat_database";
@@ -139,6 +142,39 @@ public class DatabaseManager {
 		return false;
 	}
 
+	public List<Roster> getRosterItem(String username) {
+		List<Roster> rosters = new LinkedList<>();
+		if (isUser(username)) {
+			long id = getUsernameId(username);
+			String query = "SELECT " + DatabaseContract.User.COLUMN_USERNAME + ","
+					+ DatabaseContract.User.COLUMN_FIRST_NAME + "," + DatabaseContract.User.COLUMN_LAST_NAME + ","
+					+ DatabaseContract.User.COLUMN_STATUS_MESSAGE + "," + DatabaseContract.User.COLUMN_STATUS +","
+					+ DatabaseContract.Roster.COLUMN_SUBSCRIPTION+" FROM "
+					+ DatabaseContract.Roster.TABLE_NAME + "," + DatabaseContract.User.TABLE_NAME + " WHERE "
+					+ DatabaseContract.Roster.COLUMN_USER_ID + " = " + id + " AND "
+					+ DatabaseContract.Roster.COLUMN_ROSTER_ID + " = " + DatabaseContract.User.COLUMN_ID + ";";
+			
+			try {
+				ResultSet result = stat.executeQuery(query);
+				while(result.next()) {
+					String usernameResult = result.getString(DatabaseContract.User.COLUMN_USERNAME);
+					String firstName = result.getString(DatabaseContract.User.COLUMN_FIRST_NAME);
+					String lastName = result.getString(DatabaseContract.User.COLUMN_LAST_NAME);
+					String statusMessage = result.getString(DatabaseContract.User.COLUMN_STATUS_MESSAGE);
+					String status = result.getString(DatabaseContract.User.COLUMN_STATUS);
+					String subscription = result.getString(DatabaseContract.Roster.COLUMN_SUBSCRIPTION);
+					Roster rost = new Roster(username,usernameResult,firstName,lastName,subscription,status,statusMessage);
+					rosters.add(rost);
+				}
+				return rosters;
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}	
+		}
+		return null;
+
+	}
+
 	public boolean updateSubscription(String username, String username2, String subscription) {
 
 		if (isUser(username) && isUser(username2)) {
@@ -162,23 +198,23 @@ public class DatabaseManager {
 
 	public boolean storeMessage(String senderUsername, String receiverUsername, String message, String messageId) {
 		message = formatString(message);
-		System.out.println("Formated Message: "+message);
+		System.out.println("Formated Message: " + message);
 		if (isUser(senderUsername) && isUser(receiverUsername)) {
 			long senderId = getUsernameId(senderUsername);
 			long receiverId = getUsernameId(receiverUsername);
 			String query1 = "INSERT INTO " + DatabaseContract.Message.TABLE_NAME + "("
-					+ DatabaseContract.Message.COLUMN_ID + "," + DatabaseContract.Message.COLUMN_FROM + ","+
-					DatabaseContract.Message.COLUMN_MESSAGE+","
-					+ DatabaseContract.Message.COLUMN_STATUS + ")VALUES('" + messageId + "',"+senderId+",'"+message+"','ND');";
-			String query2 = "INSERT INTO "+DatabaseContract.MessageRecepient.TABLE_NAME+"("+
-							DatabaseContract.MessageRecepient.COLUMN_MESSAGE_ID+","+
-							DatabaseContract.MessageRecepient.COLUMN_RECEPIENT_ID+")VALUES('"+
-							messageId+"',"+receiverId+");";
+					+ DatabaseContract.Message.COLUMN_ID + "," + DatabaseContract.Message.COLUMN_FROM + ","
+					+ DatabaseContract.Message.COLUMN_MESSAGE + "," + DatabaseContract.Message.COLUMN_STATUS
+					+ ")VALUES('" + messageId + "'," + senderId + ",'" + message + "','ND');";
+			String query2 = "INSERT INTO " + DatabaseContract.MessageRecepient.TABLE_NAME + "("
+					+ DatabaseContract.MessageRecepient.COLUMN_MESSAGE_ID + ","
+					+ DatabaseContract.MessageRecepient.COLUMN_RECEPIENT_ID + ")VALUES('" + messageId + "',"
+					+ receiverId + ");";
 			System.out.println(query1);
 			try {
 				int count1 = stat.executeUpdate(query1);
 				int count2 = stat.executeUpdate(query2);
-				if(count1>0 && count2>0)
+				if (count1 > 0 && count2 > 0)
 					return true;
 				return false;
 			} catch (SQLException e) {
@@ -187,18 +223,18 @@ public class DatabaseManager {
 		}
 		return false;
 	}
-	
-	public boolean updateMessageStatus(String messageId,String status) {
-		String query = "UPDATE "+DatabaseContract.Message.TABLE_NAME+" SET "+
-						DatabaseContract.Message.COLUMN_STATUS+" = '"+status+"' WHERE "+
-						DatabaseContract.Message.COLUMN_ID +" = '"+messageId+"';";
+
+	public boolean updateMessageStatus(String messageId, String status) {
+		String query = "UPDATE " + DatabaseContract.Message.TABLE_NAME + " SET "
+				+ DatabaseContract.Message.COLUMN_STATUS + " = '" + status + "' WHERE "
+				+ DatabaseContract.Message.COLUMN_ID + " = '" + messageId + "';";
 		int count = 0;
 		try {
 			count = stat.executeUpdate(query);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		if(count > 0)
+		if (count > 0)
 			return true;
 		return false;
 	}
@@ -220,12 +256,10 @@ public class DatabaseManager {
 	private void createMessageTable() throws SQLException {
 		String queryMessageTable = "CREATE TABLE " + DatabaseContract.Message.TABLE_NAME + "("
 				+ DatabaseContract.Message.COLUMN_ID + " VARCHAR(20) PRIMARY KEY NOT NULL,"
-				+ DatabaseContract.Message.COLUMN_FROM + " BIGINT NOT NULL," + 
-				DatabaseContract.Message.COLUMN_MESSAGE+" LONGTEXT,"+
-				DatabaseContract.Message.COLUMN_STATUS+ " VARCHAR(15)," + 
-				"FOREIGN KEY (" + DatabaseContract.Message.COLUMN_FROM + ")" + "REFERENCES "
-				+ DatabaseContract.User.TABLE_NAME + "(" + DatabaseContract.User.COLUMN_ID + ")"
-				+ "ON DELETE CASCADE ON UPDATE CASCADE);";
+				+ DatabaseContract.Message.COLUMN_FROM + " BIGINT NOT NULL," + DatabaseContract.Message.COLUMN_MESSAGE
+				+ " LONGTEXT," + DatabaseContract.Message.COLUMN_STATUS + " VARCHAR(15)," + "FOREIGN KEY ("
+				+ DatabaseContract.Message.COLUMN_FROM + ")" + "REFERENCES " + DatabaseContract.User.TABLE_NAME + "("
+				+ DatabaseContract.User.COLUMN_ID + ")" + "ON DELETE CASCADE ON UPDATE CASCADE);";
 		System.out.println(queryMessageTable);
 		stat.executeUpdate(queryMessageTable);
 		System.out.println("Created " + DatabaseContract.Message.TABLE_NAME + " successfully");
@@ -295,32 +329,33 @@ public class DatabaseManager {
 		}
 		return id;
 	}
-	
+
 	private String formatString(String message) {
 		StringBuilder build = new StringBuilder();
-		for(int i = 0;i<message.length();i++) {
+		for (int i = 0; i < message.length(); i++) {
 			char c = message.charAt(i);
-			if(c == '\'') {
+			if (c == '\'') {
 				build.append("\\'");
-			}
-			else if(c == '"') {
-				build.append("\\"+"\"");
-			}
-			else
+			} else if (c == '"') {
+				build.append("\\" + "\"");
+			} else
 				build.append(c);
 		}
 		return build.toString();
 	}
-	
+
 	public static void main(String args[]) {
 		DatabaseManager dm = new DatabaseManager();
-		
-		 /*dm.addUser("jitu", "jitu", "Jitendra", "Jitendra", "Online","Just started using");
-		 dm.addUser("pitu", "pitu", "Pitu", "pitu", "Offline","Pitu I am");*/
-		 dm.updateStatus("pitu", "Offline");
-		 //dm.addRoster("jitu","pitu", "suscribe"); 
-		 dm.updateSubscription("jitu", "pitu", "suscribed");
-		 dm.storeMessage("jitu", "pitu", "Hey what's \"Goa\" up", "jitu@1789556");
-		 dm.updateMessageStatus("jitu@1789456", "D");
+
+		/*
+		 * dm.addUser("jitu", "jitu", "Jitendra", "Jitendra",
+		 * "Online","Just started using"); dm.addUser("pitu", "pitu", "Pitu", "pitu",
+		 * "Offline","Pitu I am");
+		 */
+		dm.updateStatus("pitu", "Offline");
+		// dm.addRoster("jitu","pitu", "suscribe");
+		dm.updateSubscription("jitu", "pitu", "suscribed");
+		dm.storeMessage("jitu", "pitu", "Hey what's \"Goa\" up", "jitu@1789556");
+		dm.updateMessageStatus("jitu@1789456", "D");
 	}
 }
